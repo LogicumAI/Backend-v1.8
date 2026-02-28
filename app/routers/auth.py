@@ -57,7 +57,8 @@ async def register(payload: AuthRequest, response: Response, session: Session = 
     set_auth_cookies(response, access_token, refresh_token)
     
     return {
-        "user": {"email": new_user.email, "id": str(new_user.id)}
+        "user": {"email": new_user.email, "id": str(new_user.id)},
+        "access_token": access_token
     }
 
 @router.post("/login")
@@ -86,5 +87,6 @@ async def login(payload: AuthRequest, response: Response, session: Session = Dep
     set_auth_cookies(response, access_token, refresh_token)
     
     return {
-        "user": {"email": user.email, "id": str(user.id)}
+        "user": {"email": user.email, "id": str(user.id)},
+        "access_token": access_token
     }

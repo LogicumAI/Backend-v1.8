@@ -40,9 +40,15 @@ class KronosAuthRequest(BaseModel):
 
 def get_current_user_id(request: Request):
     """
-    Dependency to get the current user ID strictly from the httpOnly access_token cookie.
+    Dependency to get the current user ID from:
+    1) httpOnly access_token cookie
+    2) Authorization: Bearer <token> header
     """
     token = request.cookies.get("access_token")
+    if not token:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            token = auth_header[7:].strip()
 
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -142,7 +148,7 @@ async def auth_kronos(payload: KronosAuthRequest, response: Response):
         "role": "tester",
         "auth_provider": "kronos",
     }
-    return {"user": user_data}
+    return {"user": user_data, "access_token": access_token}
 
 
 @app.post("/auth/refresh")
