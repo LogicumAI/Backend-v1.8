@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 class ChatSendRequest(BaseModel):
     chat_id: Optional[int] = None   # None = start new chat
     message: str
+    study_mode: bool = False
 
 
 class ChatSendResponse(BaseModel):

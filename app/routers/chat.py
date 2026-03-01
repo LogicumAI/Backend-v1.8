@@ -62,6 +62,7 @@ async def send_message(
         chat_id=chat_id,
         session=session,
         user_id=user_id,
+        study_mode=body.study_mode,
     )
 
     # ── Store assistant message ──────────────

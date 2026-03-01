@@ -28,10 +28,11 @@ from app.services.prompts import (
     build_gpt52_system_prompt,
     build_codex_system_prompt,
 )
+from app.services.retrieval import run_ocr_retrieval
 
 
 # Versioning
-BACKEND_VERSION = "2"
+BACKEND_VERSION = "2.1"
 
 
 # ── Step 1a: Summary Engine ─────────────────
@@ -173,27 +174,29 @@ async def execute_pipeline(
     chat_id: int,
     session: Session,
     user_id: int,
+    study_mode: bool = False,
 ) -> dict:
     """
-    Run the complete AI response pipeline.
-
-    Returns dict with: summary, answer, model_used, latency_ms
+    Run the complete AI response pipeline with optional OCR retrieval.
     """
     start = time.perf_counter()
 
     # ── Phase 1: parallel pre-processing ─────
+    start_initial = time.perf_counter()
     summary_task = asyncio.create_task(run_summary_engine(user_message))
     optimizer_task = asyncio.create_task(run_prompt_optimizer(user_message))
     router_task = asyncio.create_task(run_router(user_message))
     relevance_task = asyncio.create_task(
         run_relevance_selector(user_message, session, chat_id)
     )
+    retrieval_task = asyncio.create_task(run_ocr_retrieval(user_id, user_message))
 
     # Run Phase 1 tasks
     results = await asyncio.gather(
-        summary_task, optimizer_task, router_task, relevance_task,
+        summary_task, optimizer_task, router_task, relevance_task, retrieval_task,
         return_exceptions=True
     )
+    latency_initial_ms = int((time.perf_counter() - start_initial) * 1000)
     
     # Unpack safely
     summary = results[0] if not isinstance(results[0], Exception) else "Planung der Antwort..."
@@ -206,16 +209,36 @@ async def execute_pipeline(
 
     route = results[2] if not isinstance(results[2], Exception) else "FLASH"
     relevant_context = results[3] if not isinstance(results[3], Exception) else "RELEVANT_CONTEXT\n- none"
+    ocr_context = results[4] if not isinstance(results[4], Exception) else ""
+
+    # ── Study Mode Abort Logic ────────────────
+    if study_mode and not ocr_context:
+        latency_ms = int((time.perf_counter() - start) * 1000)
+        return {
+            "summary": "Studien-Modus aktiv: Verifizierung wird durchgeführt...",
+            "answer": "Zu dieser Anfrage wurde in den Unterlagen kein passender Kontext gefunden (Study Mode aktiv).",
+            "initial_model": "GPT 5 Nano",
+            "execution_model": "ABORTED",
+            "latency_initial_ms": latency_initial_ms,
+            "latency_execution_ms": 0,
+            "latency_ms": latency_ms,
+            "backend_version": BACKEND_VERSION,
+        }
+
+    # Combine all context
+    full_context = f"{relevant_context}\n\n{ocr_context}".strip()
 
     # ── Phase 2: model execution ─────────────
+    start_execution = time.perf_counter()
     try:
-        answer = await run_model_execution(optimized_prompt, relevant_context, route)
+        answer = await run_model_execution(optimized_prompt, full_context, route)
         if not answer:
             answer = "Sorry, I couldn't generate a valid response right now."
     except Exception as e:
         print(f"Model execution critical failure: {e}")
         answer = "I apologize, but my core engine encountered an error. Please try again in a moment."
-
+    
+    latency_execution_ms = int((time.perf_counter() - start_execution) * 1000)
     latency_ms = int((time.perf_counter() - start) * 1000)
 
     # ── Phase 2.5: S3 Data Center Storage ──────
@@ -250,7 +273,10 @@ async def execute_pipeline(
     return {
         "summary": summary,
         "answer": answer,
-        "model_used": route,
+        "initial_model": "GPT 5 Nano",
+        "execution_model": route,
+        "latency_initial_ms": latency_initial_ms,
+        "latency_execution_ms": latency_execution_ms,
         "latency_ms": latency_ms,
         "backend_version": BACKEND_VERSION,
     }
