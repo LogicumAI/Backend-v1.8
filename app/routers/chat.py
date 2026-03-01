@@ -70,7 +70,7 @@ async def send_message(
         chat_id=chat_id,
         role="assistant",
         content=result["answer"],
-        model_used=result["model_used"],
+        model_used=result["execution_model"],
         latency_ms=result["latency_ms"],
     )
     session.add(assistant_msg)
@@ -80,7 +80,7 @@ async def send_message(
         chat_id=chat_id,
         summary=result["summary"],
         answer=result["answer"],
-        model_used=result["model_used"],
+        model_used=result["execution_model"],
         latency_ms=result["latency_ms"],
         backend_version=result["backend_version"],
     )
