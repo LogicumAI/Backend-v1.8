@@ -1,0 +1,10 @@
+bcrypt==3.2.2
+boto3
+fastapi
+httpx
+passlib[bcrypt]==1.7.4
+pydantic
+PyJWT
+python-multipart
+sqlmodel
+uvicorn[standard]
