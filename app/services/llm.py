@@ -14,8 +14,8 @@ if not OPENAI_API_KEY:
     raise RuntimeError("OPENAI_API_KEY is not set")
 
 # ── Global Model Mapping ──────────────────────
-OPENAI_GPT4O_MODEL = os.environ.get("OPENAI_GPT4O_MODEL", "gpt-4o")
-OPENAI_GPT4O_MINI_MODEL = os.environ.get("OPENAI_GPT4O_MINI_MODEL", "gpt-4o-mini")
+OPENAI_GPT4O_MODEL = os.environ.get("OPENAI_GPT4O_MODEL", "GPT 5.2")
+OPENAI_GPT4O_MINI_MODEL = os.environ.get("OPENAI_GPT4O_MINI_MODEL", "GPT 5 Nano")
 OPENAI_BASE_URL = "https://api.openai.com/v1/chat/completions"
 
 # Fictional specification models from PDF 1.0
@@ -27,16 +27,18 @@ GPT51 = "GPT-5.1"
 def normalize_openai_model(model: str) -> str:
     """Ensure fictional specification models map to real OpenAI IDs."""
     mapping = {
-        "GPT-5.2": "gpt-4o",
-        "GPT52": "gpt-4o",
-        "GPT-5.1": "gpt-4o-mini",
-        "GPT51": "gpt-4o-mini",
-        "FLASH": "gpt-4o-mini",
-        "GEMINI-3-FLASH": "gpt-4o-mini",
-        "gemini-1.5-flash": "gpt-4o",
-        "gemini-1.5-flash-latest": "gpt-4o",
-        "gemini-3-flash": "gpt-4o-mini",
-        "gpt-5-nano": "gpt-4o-mini"
+        "GPT-5.2": "GPT 5.2",
+        "GPT52": "GPT 5.2",
+        "GPT-5.1": "GPT 5 Nano",
+        "GPT51": "GPT 5 Nano",
+        "FLASH": "GPT 5 Nano",
+        "GEMINI-3-FLASH": "GPT 5 Nano",
+        "gemini-1.5-flash": "GPT 5.2",
+        "gemini-1.5-flash-latest": "GPT 5.2",
+        "gemini-3-flash": "GPT 5 Nano",
+        "gpt-5-nano": "GPT 5 Nano",
+        "CODEX": "GPT 5.3 Codex",
+        "GPT 5.3 Codex": "GPT 5.3 Codex"
     }
     return mapping.get(model, model)
 
@@ -51,7 +53,7 @@ async def call_gemini(
     """[MIGRATED] Wraps call_openai to replace Gemini functionality."""
     # Map Gemini-style model calls to GPT
     if not model or "gemini" in model.lower() or "nano" in model.lower():
-        model = OPENAI_GPT4O_MINI_MODEL
+        model = "GPT 5 Nano"
         
     return await call_openai(
         system_prompt=system_prompt,

@@ -22,7 +22,10 @@ PROMPT_OPTIMIZER = (
     "with a precisely defined objective and expected result structure.\n"
     "Preserve the original intention entirely while systematically increasing clarity,\n"
     "structure and interpretability.\n"
-    "Avoid all meta commentary or explanation and output only the final optimized prompt\n"
+    "If the original user request is already simple, clear, and unambiguous (e.g., a simple greeting,\n"
+    "a short question, or a direct command that does not need optimization), do not optimize it.\n"
+    "Instead, output exactly the word 'SKIP'.\n"
+    "Otherwise, avoid all meta commentary or explanation and output only the final optimized prompt\n"
     "as a coherent, directly executable instruction."
 )
 
@@ -31,14 +34,17 @@ PROMPT_OPTIMIZER = (
 # ─────────────────────────────────────────────
 ROUTER = (
     "You are a cost-sensitive routing classifier inside an AI backend.\n"
-    "Valid outputs: FLASH or GPT52. Minimize cost while\n"
+    "Valid outputs: FLASH, GPT52, or CODEX. Minimize cost while\n"
     "preserving required reasoning depth. FLASH is the default and must be selected whenever\n"
-    "the request. GPT52 may only be selected if the request requires multi-layer causal reasoning\n"
+    "the request is simple or standard. GPT52 may only be selected if the request requires multi-layer causal reasoning\n"
     "across at least three dependent steps, explicit trade-off modeling, identification of hidden\n"
-    "assumptions or systemic risks, and cannot reasonably be handled by FLASH. If any of these\n"
-    "conditions are missing or uncertainty exists, select FLASH. Return exactly one of the\n"
-    "following: FLASH or GPT52.\n"
-    "Output exactly one word: FLASH or GPT52.\n"
+    "assumptions or systemic risks, and cannot reasonably be handled by FLASH.\n"
+    "CODEX may ONLY be selected if the request involves COMPLEX CODE GENERATION (e.g., implementing full systems,\n"
+    "writing complex algorithms, or architectural refactoring). If the request is a simple code task\n"
+    "(e.g., 'how to write a for loop', fixing a small syntax error, explaining a basic function),\n"
+    "you MUST route to FLASH.\n"
+    "Return exactly one of the following: FLASH, GPT52, or CODEX.\n"
+    "Output exactly one word.\n"
     "No additional text."
 )
 
@@ -92,7 +98,9 @@ SUMMARY_ENGINE = (
     "eigentlichen Antwort. Dein Ziel ist ausschließlich, transparent darzustellen,\n"
     "welche konkreten Schritte und Inhalte nun folgen, sodass der Nutzer eindeutig\n"
     "erkennt, was umgesetzt wird und wie eventuelle Unklarheiten interpretiert wurden.\n"
-    "Gib ausschließlich diese strukturierte Verständnisbestätigung aus. Beginne deine Ausgabe "
+    "Wenn die Anfrage sehr simpel, selbsterklärend oder trivial ist (z.B. eine einfache Begrüßung\n"
+    "oder eine kurze Frage, die keine komplexe Ausführung erfordert), gib exakt das Wort 'SKIP' aus.\n"
+    "Ansonsten gib ausschließlich diese strukturierte Verständnisbestätigung aus. Beginne deine Ausgabe "
     "NIEMALS mit einem Präfix wie 'Summary Engine:', 'Zusammenfassung:' oder ähnlichem."
 )
 
@@ -276,6 +284,21 @@ def build_gpt52_system_prompt(mode: str = "default") -> str:
         GPT52_OUTPUT_STRUCTURE,
         GPT52_MODE_INJECTION,
     ])
+
+def build_codex_system_prompt(mode: str = "default") -> str:
+    """Combine Codex guidelines for complex code tasks."""
+    # Reusing GPT52 strict reasoning identity but emphasizing code.
+    CODEX_CORE = (
+        "You are the advanced coding standard mechanism, \"GPT 5.3 Codex\". Your primary goal is to write "
+        "production-ready, secure, and highly optimized code for complex tasks. "
+        "Provide thorough architectural guidance and algorithm planning when asked."
+    )
+    return "\n\n".join([
+        CODEX_CORE,
+        GPT52_REASONING_RULES,
+        GPT52_OUTPUT_STRUCTURE
+    ])
+
 # ─────────────────────────────────────────────
 # 7. OCR Multimodal Embedding System V3
 # ─────────────────────────────────────────────

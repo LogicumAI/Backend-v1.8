@@ -26,6 +26,7 @@ from app.services.prompts import (
     TURN_SUMMARY_GENERATOR,
     build_flash_system_prompt,
     build_gpt52_system_prompt,
+    build_codex_system_prompt,
 )
 
 
@@ -70,6 +71,8 @@ async def run_router(user_message: str) -> str:
         # Ensure we only return spec-compliant tokens
         if "GPT52" in route or "GPT-5.2" in route:
             return "GPT52"
+        elif "CODEX" in route:
+            return "CODEX"
         return "FLASH"
     except Exception as e:
         print(f"Router failure: {e}")
@@ -130,6 +133,13 @@ async def run_model_execution(
             user_content=user_content,
             model="GPT52",
         )
+    elif route == "CODEX":
+        system_prompt = build_codex_system_prompt()
+        return await call_openai(
+            system_prompt=system_prompt,
+            user_content=user_content,
+            model="CODEX",
+        )
     else:
         # Defaults to FLASH
         system_prompt = build_flash_system_prompt()
@@ -187,7 +197,13 @@ async def execute_pipeline(
     
     # Unpack safely
     summary = results[0] if not isinstance(results[0], Exception) else "Planung der Antwort..."
+    if isinstance(summary, str) and summary.strip() == "SKIP":
+        summary = ""
+
     optimized_prompt = results[1] if not isinstance(results[1], Exception) else user_message
+    if isinstance(optimized_prompt, str) and optimized_prompt.strip() == "SKIP":
+        optimized_prompt = user_message
+
     route = results[2] if not isinstance(results[2], Exception) else "FLASH"
     relevant_context = results[3] if not isinstance(results[3], Exception) else "RELEVANT_CONTEXT\n- none"
 
