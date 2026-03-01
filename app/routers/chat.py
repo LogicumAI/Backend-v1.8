@@ -81,6 +81,11 @@ async def send_message(
         summary=result["summary"],
         answer=result["answer"],
         model_used=result["execution_model"],
+        initial_model=result.get("initial_model", "N/A"),
+        execution_model=result["execution_model"],
         latency_ms=result["latency_ms"],
+        latency_initial_ms=result.get("latency_initial_ms", 0),
+        latency_execution_ms=result.get("latency_execution_ms", 0),
         backend_version=result["backend_version"],
+        is_study_mode_abort=(result["execution_model"] == "ABORTED"),
     )
