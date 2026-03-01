@@ -25,22 +25,27 @@ GEMINI_3_FLASH = "GEMINI-3-FLASH"
 GPT51 = "GPT-5.1"
     
 def normalize_openai_model(model: str) -> str:
-    """Ensure fictional specification models map to real OpenAI IDs."""
+    """Ensure fictional specification models map to real OpenAI IDs (Robust)."""
+    if not model:
+        return "gpt-4o"
+    
+    # Normalize input for matching (e.g. "GPT 5.2" -> "gpt-5.2")
+    m = model.strip().replace(" ", "-").lower()
+    
     mapping = {
-        "GPT-5.2": "GPT 5.2",
-        "GPT52": "GPT 5.2",
-        "GPT-5.1": "GPT 5 Nano",
-        "GPT51": "GPT 5 Nano",
-        "FLASH": "GPT 5 Nano",
-        "GEMINI-3-FLASH": "GPT 5 Nano",
-        "gemini-1.5-flash": "GPT 5.2",
-        "gemini-1.5-flash-latest": "GPT 5.2",
-        "gemini-3-flash": "GPT 5 Nano",
-        "gpt-5-nano": "GPT 5 Nano",
-        "CODEX": "GPT 5.3 Codex",
-        "GPT 5.3 Codex": "GPT 5.3 Codex"
+        "gpt-5.2": "gpt-4o",
+        "gpt52": "gpt-4o",
+        "gpt-5.1": "gpt-4o-mini",
+        "gpt51": "gpt-4o-mini",
+        "flash": "gpt-4o-mini",
+        "gemini-3-flash": "gpt-4o-mini",
+        "gemini-1.5-flash": "gpt-4o",
+        "gemini-1.5-flash-latest": "gpt-4o",
+        "gpt-5-nano": "gpt-4o-mini",
+        "codex": "gpt-4o",
+        "gpt-5.3-codex": "gpt-4o",
     }
-    return mapping.get(model, model)
+    return mapping.get(m, model) # Fallback to original if not found
 
 
 async def call_gemini(
